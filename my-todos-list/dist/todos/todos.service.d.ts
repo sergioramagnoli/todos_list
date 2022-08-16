@@ -1,8 +1,11 @@
 import { Todo } from "./todos.model";
+export declare let admin: any;
 export declare class TodosService {
     private todos;
-    getToken(uid: string): Promise<any>;
-    addTodo(uid: string, title: string, desc: string): Promise<string>;
+    getToken(uid: string): Promise<{
+        access_token: string;
+        refresh_token: string;
+    }>;
     fetchTodos(uid: string): Promise<{
         [x: number]: Todo;
         length: number;

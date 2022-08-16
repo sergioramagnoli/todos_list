@@ -1,9 +1,8 @@
 import {Injectable, NotFoundException} from "@nestjs/common";
 import {Todo} from "./todos.model";
-import {getAuth, signInWithCustomToken} from "firebase/auth";
+import {getAuth, signInWithCustomToken, connectAuthEmulator } from "firebase/auth";
 import {initializeApp} from "firebase/app";
 import {getFirestore, setDoc, doc, getDocs, getDoc, collection, updateDoc, deleteDoc} from "firebase/firestore";
-
 const firebaseConfig = {
     apiKey: "AIzaSyAO0vD-h9xhDoFOkSojdNyjHNTCVlu5agw",
     authDomain: "todoslist-c4530.firebaseapp.com",
@@ -12,45 +11,23 @@ const firebaseConfig = {
     messagingSenderId: "943090214915",
     appId: "1:943090214915:web:096ffde8456904abdd0636"
 };
-
 let app = initializeApp(firebaseConfig);
-let admin = require('firebase-admin');
-const ServiceAccount = require('./todoslist-adminsdk.json');
-admin.initializeApp({
+export let admin = require('firebase-admin'); 
+import * as ServiceAccount from "./todoslist-adminsdk.json"
+admin.initializeApp({ 
     credential: admin.credential.cert(ServiceAccount)
 });
-
 let db = getFirestore(app)
-let auth = getAuth(app);
-
+let auth = getAuth(app); 
+connectAuthEmulator(auth, "http://localhost:9099")
 @Injectable()
 export class TodosService {
     private todos: Todo[] = [];
-
     async getToken(uid: string) {
-        return await admin.auth().createCustomToken(uid)
-            .then(async (CustomToken) => {
-                return await signInWithCustomToken(auth, CustomToken)
-                    .then((Cred) => {
-                        return Cred;
-                    })
-            })
-    }
-
-    async addTodo(uid: string, title: string, desc: string) {
-        const myId = new Date().getTime().toString();
-        const myTodo = {id: myId, title: title, desc: desc};
-        try {
-            await setDoc(doc(db, uid, myId), myTodo)
-            return 'TODO successfully added'
-        } catch (e) {
-            if(e.code == 'permission-denied')
-                throw new NotFoundException('Without permission to add a TODO here');
-            else
-                throw new NotFoundException('ERROR: ' + e);
-        }
-    }
-
+        const customToken = await admin.auth().createCustomToken(uid, { role: 'student' }) 
+        const userCredentials = await signInWithCustomToken(auth, customToken)
+        return { access_token: await userCredentials.user.getIdToken(), refresh_token: userCredentials.user.refreshToken } 
+    } 
     async fetchTodos(uid: string) {
         this.todos = [];
         try {

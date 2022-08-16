@@ -19,11 +19,24 @@ let TodosController = class TodosController {
     constructor(todosService) {
         this.todosService = todosService;
     }
-    addTodo(myUid, myTitle, myDesc) {
-        return this.todosService.addTodo(myUid, myTitle, myDesc);
+    async addTodo(myUid, myTitle, myDesc, req) {
+        const accessToken = req.headers.authorization.split(" ")[1];
+        const decodedToken = await todos_service_1.admin.auth().verifyIdToken(accessToken);
+        const myId = new Date().getTime().toString();
+        const myTodo = { id: myId, title: myTitle, desc: myDesc };
+        try {
+            await todos_service_1.admin.firestore().collection(decodedToken.uid).doc(myId).set(myTodo);
+            return 'TODO successfully added';
+        }
+        catch (e) {
+            if (e.code == 'permission-denied')
+                throw new common_1.NotFoundException('Without permission to add a TODO here');
+            else
+                throw new common_1.NotFoundException('ERROR: ' + e);
+        }
     }
-    getCustomToken(myUid) {
-        return this.todosService.getToken(myUid);
+    getCustomToken(uid) {
+        return this.todosService.getToken(uid);
     }
     getTodos(myUid) {
         return this.todosService.fetchTodos(myUid);
@@ -43,13 +56,14 @@ __decorate([
     __param(0, (0, common_1.Param)('uid')),
     __param(1, (0, common_1.Body)('title')),
     __param(2, (0, common_1.Body)('desc')),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, String, String, Object]),
+    __metadata("design:returntype", Promise)
 ], TodosController.prototype, "addTodo", null);
 __decorate([
-    (0, common_1.Post)('login/:uid'),
-    __param(0, (0, common_1.Param)('uid')),
+    (0, common_1.Post)('/login'),
+    __param(0, (0, common_1.Body)('uid')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)

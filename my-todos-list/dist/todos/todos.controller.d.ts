@@ -1,9 +1,13 @@
 import { TodosService } from "./todos.service";
+import { Request } from "express";
 export declare class TodosController {
     private readonly todosService;
     constructor(todosService: TodosService);
-    addTodo(myUid: string, myTitle: string, myDesc: string): Promise<string>;
-    getCustomToken(myUid: string): Promise<any>;
+    addTodo(myUid: string, myTitle: string, myDesc: string, req: Request): Promise<string>;
+    getCustomToken(uid: string): Promise<{
+        access_token: string;
+        refresh_token: string;
+    }>;
     getTodos(myUid: string): Promise<{
         [x: number]: import("./todos.model").Todo;
         length: number;

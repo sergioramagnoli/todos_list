@@ -6,7 +6,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TodosService = void 0;
+exports.TodosService = exports.admin = void 0;
 const common_1 = require("@nestjs/common");
 const todos_model_1 = require("./todos.model");
 const auth_1 = require("firebase/auth");
@@ -21,39 +21,22 @@ const firebaseConfig = {
     appId: "1:943090214915:web:096ffde8456904abdd0636"
 };
 let app = (0, app_1.initializeApp)(firebaseConfig);
-let admin = require('firebase-admin');
-const ServiceAccount = require('./todoslist-adminsdk.json');
-admin.initializeApp({
-    credential: admin.credential.cert(ServiceAccount)
+exports.admin = require('firebase-admin');
+const ServiceAccount = require("./todoslist-adminsdk.json");
+exports.admin.initializeApp({
+    credential: exports.admin.credential.cert(ServiceAccount)
 });
 let db = (0, firestore_1.getFirestore)(app);
 let auth = (0, auth_1.getAuth)(app);
+(0, auth_1.connectAuthEmulator)(auth, "http://localhost:9099");
 let TodosService = class TodosService {
     constructor() {
         this.todos = [];
     }
     async getToken(uid) {
-        return await admin.auth().createCustomToken(uid)
-            .then(async (CustomToken) => {
-            return await (0, auth_1.signInWithCustomToken)(auth, CustomToken)
-                .then((Cred) => {
-                return Cred;
-            });
-        });
-    }
-    async addTodo(uid, title, desc) {
-        const myId = new Date().getTime().toString();
-        const myTodo = { id: myId, title: title, desc: desc };
-        try {
-            await (0, firestore_1.setDoc)((0, firestore_1.doc)(db, uid, myId), myTodo);
-            return 'TODO successfully added';
-        }
-        catch (e) {
-            if (e.code == 'permission-denied')
-                throw new common_1.NotFoundException('Without permission to add a TODO here');
-            else
-                throw new common_1.NotFoundException('ERROR: ' + e);
-        }
+        const customToken = await exports.admin.auth().createCustomToken(uid, { role: 'student' });
+        const userCredentials = await (0, auth_1.signInWithCustomToken)(auth, customToken);
+        return { access_token: await userCredentials.user.getIdToken(), refresh_token: userCredentials.user.refreshToken };
     }
     async fetchTodos(uid) {
         this.todos = [];
