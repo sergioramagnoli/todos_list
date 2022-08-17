@@ -2,7 +2,8 @@ import {Injectable, NotFoundException} from "@nestjs/common";
 import {Todo} from "./todos.model";
 import {getAuth, signInWithCustomToken, connectAuthEmulator } from "firebase/auth";
 import {initializeApp} from "firebase/app";
-import {getFirestore, setDoc, doc, getDocs, getDoc, collection, updateDoc, deleteDoc} from "firebase/firestore";
+import {getFirestore, connectFirestoreEmulator} from "firebase/firestore";
+import * as ServiceAccount from "./todoslist-adminsdk.json"
 const firebaseConfig = {
     apiKey: "AIzaSyAO0vD-h9xhDoFOkSojdNyjHNTCVlu5agw",
     authDomain: "todoslist-c4530.firebaseapp.com",
@@ -10,32 +11,40 @@ const firebaseConfig = {
     storageBucket: "todoslist-c4530.appspot.com",
     messagingSenderId: "943090214915",
     appId: "1:943090214915:web:096ffde8456904abdd0636"
-};
-let app = initializeApp(firebaseConfig);
-export let admin = require('firebase-admin'); 
-import * as ServiceAccount from "./todoslist-adminsdk.json"
-admin.initializeApp({ 
+}
+
+initializeApp(firebaseConfig);
+
+export let admin = require('firebase-admin');
+admin.initializeApp({
     credential: admin.credential.cert(ServiceAccount)
 });
-let db = getFirestore(app)
-let auth = getAuth(app); 
-connectAuthEmulator(auth, "http://localhost:9099")
+
+let db = getFirestore()
+connectFirestoreEmulator(db, 'localhost', 8080);
+
+let auth = getAuth();
+connectAuthEmulator(auth, 'http://localhost:9099')
+
 @Injectable()
 export class TodosService {
     private todos: Todo[] = [];
+
     async getToken(uid: string) {
         const customToken = await admin.auth().createCustomToken(uid, { role: 'student' }) 
         const userCredentials = await signInWithCustomToken(auth, customToken)
         return { access_token: await userCredentials.user.getIdToken(), refresh_token: userCredentials.user.refreshToken } 
-    } 
-    async fetchTodos(uid: string) {
+    }
+
+    async fetchTodos(myUid: string) {
         this.todos = [];
         try {
-            const query = await getDocs(collection(db, uid));
-            query.forEach((myTodo) => {
-                const theTodo = myTodo.data();
+            const promise = await admin.firestore().collection(myUid).get()
+            promise.forEach((todo) => {
+                const theTodo = todo.data();
                 this.todos.push(new Todo(theTodo.id, theTodo.title, theTodo.desc))
             })
+            console.log({...this.todos})
             return {...this.todos}
         } catch (e) {
             if(e.code == 'permission-denied')
@@ -45,10 +54,10 @@ export class TodosService {
         }
     }
 
-    async fetchTodo(uid: string, id: string) {
+    async fetchTodo(myId: string, myUid: string) {
         try {
-            const query = await getDoc(doc(db, uid, id));
-            return {...query.data()};
+            const promise = await admin.firestore().collection(myUid).doc(myId).get()
+            return {...promise.data()};
         } catch (e) {
             if(e.code == 'permission-denied')
                 throw new NotFoundException('Without permission to get this TODO');
@@ -57,8 +66,8 @@ export class TodosService {
         }
     }
 
-    async updateTodo(uid: string, id: string, title: string, desc: string): Promise<string> {
-        await this.fetchTodo(uid, id).then(async (myTodo) => {
+    async updateTodo(myUid: string, myId: string, title: string, desc: string): Promise<string> {
+        await this.fetchTodo(myId, myUid).then(async (myTodo) => {
             if(title) {
                 myTodo.title = title;
             }
@@ -66,7 +75,7 @@ export class TodosService {
                 myTodo.desc = desc;
             }
             try {
-                await updateDoc(doc(db, uid, id), myTodo)
+                await admin.firestore().collection(myUid).doc(myId).update(myTodo)
             } catch (e) {
                 if(e.code == 'permission-denied')
                     throw new NotFoundException('Without permission to update this TODO');
@@ -77,9 +86,9 @@ export class TodosService {
         return 'TODO successfully updated'
     }
 
-    async deleteTodo(uid: string, id: string): Promise<string> {
+    async deleteTodo(myUid: string, myId: string): Promise<string> {
         try {
-            await deleteDoc(doc(db, uid, id))
+            await admin.firestore().collection(myUid).doc(myId).delete();
         } catch (e) {
             if(e.code == 'permission-denied')
                 throw new NotFoundException('Without permission delete this TODO');

@@ -11,7 +11,14 @@ const common_1 = require("@nestjs/common");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const todos_module_1 = require("./todos/todos.module");
+const token_middleware_1 = require("./todos/token.middleware");
+const todos_controller_1 = require("./todos/todos.controller");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(token_middleware_1.TokenMiddleware)
+            .exclude('/login')
+            .forRoutes(todos_controller_1.TodosController);
+    }
 };
 AppModule = __decorate([
     (0, common_1.Module)({

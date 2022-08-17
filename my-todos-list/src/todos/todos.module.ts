@@ -8,4 +8,5 @@ import {TodosService} from "./todos.service";
     providers: [TodosService]
 })
 
-export class TodosModule {}
+export class TodosModule {
+}

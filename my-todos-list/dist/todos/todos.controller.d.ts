@@ -3,12 +3,12 @@ import { Request } from "express";
 export declare class TodosController {
     private readonly todosService;
     constructor(todosService: TodosService);
-    addTodo(myUid: string, myTitle: string, myDesc: string, req: Request): Promise<string>;
     getCustomToken(uid: string): Promise<{
         access_token: string;
         refresh_token: string;
     }>;
-    getTodos(myUid: string): Promise<{
+    addTodo(myTitle: string, myDesc: string, req: Request, res: any): Promise<void>;
+    getTodos(res: any, req: Request): Promise<{
         [x: number]: import("./todos.model").Todo;
         length: number;
         toString(): string;
@@ -63,9 +63,7 @@ export declare class TodosController {
         };
         at(index: number): import("./todos.model").Todo;
     }>;
-    GetOneTodo(myUid: string, myId: string): Promise<{
-        [x: string]: any;
-    }>;
-    updateTodo(myUid: string, myId: string, myTitle: string, myDesc: string): Promise<string>;
-    deleteTodo(myUid: string, myId: string): Promise<string>;
+    GetOneTodo(myId: string, res: any, req: Request): Promise<any>;
+    updateTodo(req: Request, res: any, myId: string, myTitle: string, myDesc: string): Promise<string>;
+    deleteTodo(req: Request, res: any, myId: string): Promise<string>;
 }

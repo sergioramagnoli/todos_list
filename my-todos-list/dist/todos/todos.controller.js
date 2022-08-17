@@ -19,14 +19,16 @@ let TodosController = class TodosController {
     constructor(todosService) {
         this.todosService = todosService;
     }
-    async addTodo(myUid, myTitle, myDesc, req) {
-        const accessToken = req.headers.authorization.split(" ")[1];
-        const decodedToken = await todos_service_1.admin.auth().verifyIdToken(accessToken);
+    getCustomToken(uid) {
+        return this.todosService.getToken(uid);
+    }
+    async addTodo(myTitle, myDesc, req, res) {
         const myId = new Date().getTime().toString();
         const myTodo = { id: myId, title: myTitle, desc: myDesc };
         try {
-            await todos_service_1.admin.firestore().collection(decodedToken.uid).doc(myId).set(myTodo);
-            return 'TODO successfully added';
+            todos_service_1.admin.firestore().collection(res.locals.decodedToken.uid).doc(myId).set(myTodo).then(() => {
+                return 'TODO successfully added';
+            });
         }
         catch (e) {
             if (e.code == 'permission-denied')
@@ -35,32 +37,19 @@ let TodosController = class TodosController {
                 throw new common_1.NotFoundException('ERROR: ' + e);
         }
     }
-    getCustomToken(uid) {
-        return this.todosService.getToken(uid);
+    getTodos(res, req) {
+        return this.todosService.fetchTodos(res.locals.decodedToken.uid);
     }
-    getTodos(myUid) {
-        return this.todosService.fetchTodos(myUid);
+    GetOneTodo(myId, res, req) {
+        return this.todosService.fetchTodo(res.locals.decodedToken.uid, myId);
     }
-    GetOneTodo(myUid, myId) {
-        return this.todosService.fetchTodo(myUid, myId);
+    updateTodo(req, res, myId, myTitle, myDesc) {
+        return this.todosService.updateTodo(res.locals.decodedToken.uid, myId, myTitle, myDesc);
     }
-    updateTodo(myUid, myId, myTitle, myDesc) {
-        return this.todosService.updateTodo(myUid, myId, myTitle, myDesc);
-    }
-    deleteTodo(myUid, myId) {
-        return this.todosService.deleteTodo(myUid, myId);
+    deleteTodo(req, res, myId) {
+        return this.todosService.deleteTodo(res.locals.decodedToken.uid, myId);
     }
 };
-__decorate([
-    (0, common_1.Post)(':uid/newTodo'),
-    __param(0, (0, common_1.Param)('uid')),
-    __param(1, (0, common_1.Body)('title')),
-    __param(2, (0, common_1.Body)('desc')),
-    __param(3, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, Object]),
-    __metadata("design:returntype", Promise)
-], TodosController.prototype, "addTodo", null);
 __decorate([
     (0, common_1.Post)('/login'),
     __param(0, (0, common_1.Body)('uid')),
@@ -69,36 +58,50 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TodosController.prototype, "getCustomToken", null);
 __decorate([
-    (0, common_1.Get)(':uid/todos'),
-    __param(0, (0, common_1.Param)('uid')),
+    (0, common_1.Post)('newTodo'),
+    __param(0, (0, common_1.Body)('title')),
+    __param(1, (0, common_1.Body)('desc')),
+    __param(2, (0, common_1.Req)()),
+    __param(3, (0, common_1.Response)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TodosController.prototype, "addTodo", null);
+__decorate([
+    (0, common_1.Get)('getTodos'),
+    __param(0, (0, common_1.Response)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], TodosController.prototype, "getTodos", null);
 __decorate([
-    (0, common_1.Get)(':uid/todos/:id'),
-    __param(0, (0, common_1.Param)('uid')),
-    __param(1, (0, common_1.Param)('id')),
+    (0, common_1.Get)('getTodo'),
+    __param(0, (0, common_1.Body)('id')),
+    __param(1, (0, common_1.Response)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", void 0)
 ], TodosController.prototype, "GetOneTodo", null);
 __decorate([
-    (0, common_1.Patch)(':uid/updateTodo/:id'),
-    __param(0, (0, common_1.Param)('uid')),
-    __param(1, (0, common_1.Param)('id')),
-    __param(2, (0, common_1.Body)('title')),
-    __param(3, (0, common_1.Body)('desc')),
+    (0, common_1.Patch)('updateTodo'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Response)()),
+    __param(2, (0, common_1.Body)('id')),
+    __param(3, (0, common_1.Body)('title')),
+    __param(4, (0, common_1.Body)('desc')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:paramtypes", [Object, Object, String, String, String]),
     __metadata("design:returntype", void 0)
 ], TodosController.prototype, "updateTodo", null);
 __decorate([
-    (0, common_1.Delete)(':uid/deleteTodo/:id'),
-    __param(0, (0, common_1.Param)('uid')),
-    __param(1, (0, common_1.Param)('id')),
+    (0, common_1.Delete)('deleteTodo'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Response)()),
+    __param(2, (0, common_1.Body)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [Object, Object, String]),
     __metadata("design:returntype", void 0)
 ], TodosController.prototype, "deleteTodo", null);
 TodosController = __decorate([

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ap2i = exports.api = exports.createNestServer = void 0;
+exports.api = exports.createNestServer = void 0;
 const core_1 = require("@nestjs/core");
 const platform_express_1 = require("@nestjs/platform-express");
 const app_module_1 = require("./app.module");
@@ -12,10 +12,8 @@ const createNestServer = async (expressInstance) => {
     return app.init();
 };
 exports.createNestServer = createNestServer;
-console.log("Hola mundo");
 (0, exports.createNestServer)(server)
     .then((v) => console.log('Nest Ready'))
     .catch((err) => console.error('Nest broken', err));
 exports.api = functions.region('us-central1').https.onRequest(server);
-exports.ap2i = functions.region('us-central1').https.onRequest(server);
 //# sourceMappingURL=main.firebase-functions.js.map

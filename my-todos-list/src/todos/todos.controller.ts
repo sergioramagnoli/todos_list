@@ -1,25 +1,31 @@
-import {Controller, Post, Body, Get, Param, Patch, Delete, Req, NotFoundException} from "@nestjs/common";
+import {Controller, Post, Body, Get, Patch, Delete, Req, NotFoundException, Response} from "@nestjs/common";
 import {admin, TodosService} from "./todos.service";
 import {Request} from "express";
-
 
 @Controller()
 export class TodosController {
     constructor(private readonly todosService: TodosService) {}
-    @Post(':uid/newTodo')
+
+    // login
+    @Post('/login')
+    getCustomToken(@Body('uid') uid: string) {
+        return this.todosService.getToken(uid)
+    }
+
+    // agregar todo
+    @Post('newTodo')
     async addTodo(
-        @Param('uid') myUid: string,
         @Body('title') myTitle: string,
         @Body('desc') myDesc: string,
-        @Req() req: Request
-    ) {  
-        const accessToken = req.headers.authorization.split(" ")[1]
-        const decodedToken = await admin.auth().verifyIdToken(accessToken)
+        @Req() req: Request,
+        @Response() res
+    ) {
         const myId = new Date().getTime().toString(); 
         const myTodo = {id: myId, title: myTitle, desc: myDesc};
         try {  
-            await admin.firestore().collection(decodedToken.uid).doc(myId).set(myTodo)
-            return 'TODO successfully added'
+            admin.firestore().collection(res.locals.decodedToken.uid).doc(myId).set(myTodo).then( () => {
+                return 'TODO successfully added'
+            })
         } catch (e) {
             if(e.code == 'permission-denied')
                 throw new NotFoundException('Without permission to add a TODO here');
@@ -28,39 +34,44 @@ export class TodosController {
         }
     }
 
-    @Post('/login')
-    getCustomToken(@Body('uid') uid: string) {
-        return this.todosService.getToken(uid)
-    }
-
-    @Get(':uid/todos')
-    getTodos(@Param('uid') myUid: string) {
-        return this.todosService.fetchTodos(myUid);
+    // traer todos los todos
+    @Get('getTodos')
+    getTodos(
+        @Response() res,
+        @Req() req: Request,
+    ) {
+        return this.todosService.fetchTodos(res.locals.decodedToken.uid);
     } 
 
-    @Get(':uid/todos/:id')
+    //traer un solo todo
+    @Get('getTodo')
     GetOneTodo(
-        @Param('uid') myUid: string,
-        @Param('id') myId: string,
+        @Body('id') myId: string,
+        @Response() res,
+        @Req() req: Request,
     ) {
-        return this.todosService.fetchTodo(myUid, myId)
+        return this.todosService.fetchTodo(res.locals.decodedToken.uid, myId)
     }
 
-    @Patch(':uid/updateTodo/:id')
+    // actualizar todo
+    @Patch('updateTodo')
     updateTodo(
-        @Param('uid') myUid: string,
-        @Param('id') myId: string,
+        @Req() req: Request,
+        @Response() res,
+        @Body('id') myId: string,
         @Body('title') myTitle: string,
         @Body('desc') myDesc: string
     ) {
-        return this.todosService.updateTodo(myUid, myId, myTitle, myDesc);
+        return this.todosService.updateTodo(res.locals.decodedToken.uid, myId, myTitle, myDesc);
     }
 
-    @Delete(':uid/deleteTodo/:id')
+    // eliminar todo
+    @Delete('deleteTodo')
     deleteTodo(
-        @Param('uid') myUid: string,
-        @Param('id') myId: string
+        @Req() req: Request,
+        @Response() res,
+        @Body('id') myId: string
     ) {
-        return this.todosService.deleteTodo(myUid, myId);
+        return this.todosService.deleteTodo(res.locals.decodedToken.uid, myId);
     }
 }

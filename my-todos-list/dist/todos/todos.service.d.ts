@@ -6,7 +6,7 @@ export declare class TodosService {
         access_token: string;
         refresh_token: string;
     }>;
-    fetchTodos(uid: string): Promise<{
+    fetchTodos(myUid: string): Promise<{
         [x: number]: Todo;
         length: number;
         toString(): string;
@@ -61,9 +61,7 @@ export declare class TodosService {
         };
         at(index: number): Todo;
     }>;
-    fetchTodo(uid: string, id: string): Promise<{
-        [x: string]: any;
-    }>;
-    updateTodo(uid: string, id: string, title: string, desc: string): Promise<string>;
-    deleteTodo(uid: string, id: string): Promise<string>;
+    fetchTodo(myId: string, myUid: string): Promise<any>;
+    updateTodo(myUid: string, myId: string, title: string, desc: string): Promise<string>;
+    deleteTodo(myUid: string, myId: string): Promise<string>;
 }
