@@ -1,6 +1,5 @@
-import {Injectable, NotFoundException} from "@nestjs/common";
-import {Todo} from "./todos.model";
-import {getAuth, signInWithCustomToken, connectAuthEmulator } from "firebase/auth";
+import {Injectable} from "@nestjs/common";
+import {getAuth, connectAuthEmulator } from "firebase/auth";
 import {initializeApp} from "firebase/app";
 import {getFirestore, connectFirestoreEmulator} from "firebase/firestore";
 import * as ServiceAccount from "./todoslist-adminsdk.json"
@@ -23,11 +22,12 @@ admin.initializeApp({
 let db = getFirestore()
 connectFirestoreEmulator(db, 'localhost', 8080);
 
-let auth = getAuth();
+export let auth = getAuth();
 connectAuthEmulator(auth, 'http://localhost:9099')
 
 @Injectable()
 export class TodosService {
+    /*
     private todos: Todo[] = [];
 
     async getToken(uid: string) {
@@ -44,7 +44,6 @@ export class TodosService {
                 const theTodo = todo.data();
                 this.todos.push(new Todo(theTodo.id, theTodo.title, theTodo.desc))
             })
-            console.log({...this.todos})
             return {...this.todos}
         } catch (e) {
             if(e.code == 'permission-denied')
@@ -97,4 +96,5 @@ export class TodosService {
         }
         return `TODO successfully deleted`;
     }
+    */
 }
