@@ -11,9 +11,8 @@ import {
   Response,
 } from "@nestjs/common";
 import { Request } from "express";
-import { Todo } from "./todos.model";
-import { signInWithCustomToken } from "firebase/auth";
-import { admin, auth } from "../firebase";
+import { Todo } from "./TodosModel";
+import { admin } from "../firebase";
 
 const todoFromFirestoreDocument = (document): Todo => {
   const data = document.data();
@@ -25,27 +24,14 @@ export class TodosController {
   constructor() {}
   private todos: Todo[] = [];
 
-  // login
-  @Post("/login")
-  async getCustomToken(@Body("uid") uid: string) {
-    const customToken = await admin
-      .auth()
-      .createCustomToken(uid, { role: "student" });
-    const userCredentials = await signInWithCustomToken(auth, customToken);
-    return {
-      access_token: await userCredentials.user.getIdToken(),
-      refresh_token: userCredentials.user.refreshToken,
-    };
-  }
-
   @Post()
   async addTodo(
-    @Body("title") myTitle: string,
-    @Body("desc") myDesc: string,
+    @Body("title") title: string,
+    @Body("desc") description: string,
     @Req() req: Request,
     @Response() res
   ) {
-    const myTodo = { title: myTitle, desc: myDesc };
+    const myTodo = { title: title, desc: description };
     const createdDocument = await admin
       .firestore()
       .collection("users")
@@ -54,8 +40,8 @@ export class TodosController {
       .add(myTodo);
     res.status(HttpStatus.CREATED).json({
       id: createdDocument.id,
-      title: myTitle,
-      desc: myDesc,
+      title: title,
+      desc: description,
     });
   }
 
@@ -63,59 +49,71 @@ export class TodosController {
   async getTodos(@Response() res, @Req() req: Request) {
     const snapshot = await admin
       .firestore()
-      .collection(res.locals.decodedToken.uid)
+      .collection("users")
+      .doc(req.user.uid)
+      .collection("todos")
       .get();
-    const todos = snapshot.docs.map(todoFromFirestoreDocument);
+    const todos: Todo[] = snapshot.docs.map(todoFromFirestoreDocument);
     res.send({ todos });
   }
 
   @Get("/:id")
-  async GetOneTodo(
-    @Param("id") myId: string,
+  async getOneTodo(
+    @Param("id") id: string,
     @Response() res,
     @Req() req: Request
   ) {
     const document = await admin
       .firestore()
-      .collection(res.locals.decodedToken.uid)
-      .doc(myId)
+      .collection("users")
+      .doc(req.user.uid)
+      .collection("todos")
+      .doc(id)
       .get();
-    const todo = todoFromFirestoreDocument(document);
+    const todo: Todo = todoFromFirestoreDocument(document);
     res.send({ todo });
   }
 
   @Patch("/:id")
   async updateTodo(
-    @Req() req: Request,
-    @Response() res,
     @Param("id") id: string,
     @Body("title") title: string,
-    @Body("desc") description: string
+    @Body("desc") description: string,
+    @Req() req: Request,
+    @Response() res
   ) {
     const document = await admin
       .firestore()
-      .collection(res.locals.decodedToken.uid)
+      .collection("users")
+      .doc(req.user.uid)
+      .collection("todos")
       .doc(id)
       .get();
-    let todo = todoFromFirestoreDocument(document);
+    let todo = document.data();
+    todo.title = title ? title : todo.title;
+    todo.desc = description ? description : todo.desc;
     await admin
       .firestore()
-      .collection(res.locals.decodedToken.uid)
+      .collection("users")
+      .doc(req.user.uid)
+      .collection("todos")
       .doc(id)
       .update(todo);
-    res.status(HttpStatus.CREATED).json(todo.toJSON());
+    res.status(HttpStatus.CREATED).json(todo);
   }
 
   @Delete("/:id")
   async deleteTodo(
     @Req() req: Request,
     @Response() res,
-    @Param("id") myId: string
+    @Param("id") id: string
   ) {
     await admin
       .firestore()
-      .collection(res.locals.decodedToken.uid)
-      .doc(myId)
+      .collection("users")
+      .doc(req.user.uid)
+      .collection("todos")
+      .doc(id)
       .delete();
     res.status(HttpStatus.NO_CONTENT).send();
   }

@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from './app.module';
+import { AppModule } from './AppModule';
 import * as express from 'express';
 import * as functions from 'firebase-functions';
  

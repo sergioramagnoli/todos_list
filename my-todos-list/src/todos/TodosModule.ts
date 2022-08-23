@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module } from "@nestjs/common";
-import { TodosController } from "./todos.controller";
+import { TodosController } from "./TodosController";
 import { TokenMiddleware } from "../middleware/AuthMiddleware";
 
 @Module({
@@ -10,7 +10,6 @@ export class TodosModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TokenMiddleware)
-      .exclude("/login")
       .forRoutes(TodosController);
   }
 }
