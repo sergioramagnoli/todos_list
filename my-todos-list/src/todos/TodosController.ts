@@ -13,9 +13,10 @@ import {
 import { Request } from "express";
 import { Todo } from "./TodosModel";
 import { admin } from "../firebase";
+import { firestore } from "firebase-admin";
 
 const todoFromFirestoreDocument = (document): Todo => {
-  const data = document.data();
+  const data: firestore.DocumentData = document.data();
   return new Todo(document.id, data.title, data.desc);
 };
 
@@ -89,7 +90,7 @@ export class TodosController {
       .collection("todos")
       .doc(id)
       .get();
-    let document = snapshot.data();
+    let document: firestore.DocumentData = snapshot.data();
     document.title = title ? title : document.title;
     document.desc = description ? description : document.desc;
     await admin
