@@ -82,24 +82,24 @@ export class TodosController {
     @Req() req: Request,
     @Response() res
   ) {
-    const document = await admin
+    const snapshot = await admin
       .firestore()
       .collection("users")
       .doc(req.user.uid)
       .collection("todos")
       .doc(id)
       .get();
-    let todo = document.data();
-    todo.title = title ? title : todo.title;
-    todo.desc = description ? description : todo.desc;
+    let document = snapshot.data();
+    document.title = title ? title : document.title;
+    document.desc = description ? description : document.desc;
     await admin
       .firestore()
       .collection("users")
       .doc(req.user.uid)
       .collection("todos")
       .doc(id)
-      .update(todo);
-    res.status(HttpStatus.CREATED).json(todo);
+      .update(document);
+    res.status(HttpStatus.CREATED).json({ id: snapshot.id, ...document });
   }
 
   @Delete("/:id")
